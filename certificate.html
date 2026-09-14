@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineers Day 2026 — Certificate Generator</title>
+
+    <style>
+        /* =========================================================
+           GLOBAL
+        ========================================================= */
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: Georgia, "Times New Roman", serif;
+            background: #e9e6dc;
+            color: #123f43;
+        }
+
+        body {
+            padding: 24px;
+        }
+
+        /* =========================================================
+           CONTROL PANEL
+        ========================================================= */
+        .control-panel {
+            width: min(1050px, 100%);
+            margin: 0 auto 24px;
+            padding: 20px 24px;
+            background: #f8f6ef;
+            border: 1px solid #c7b77a;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .control-heading {
+            margin: 0 0 16px;
+            color: #123f43;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 20px;
+            letter-spacing: 0.8px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr 1.5fr auto;
+            gap: 12px;
+            align-items: end;
+        }
+
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .field label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #365b5d;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .field select,
+        .field input {
+            width: 100%;
+            height: 42px;
+            padding: 0 11px;
+            border: 1px solid #9caaa5;
+            background: #fffdf8;
+            color: #183f42;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .field select:focus,
+        .field input:focus {
+            border-color: #8c7938;
+            box-shadow: 0 0 0 2px rgba(140, 121, 56, 0.12);
+        }
+
+        .print-button {
+            height: 42px;
+            padding: 0 19px;
+            border: 1px solid #123f43;
+            background: #123f43;
+            color: #fffdf5;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .print-button:hover {
+            background: #1d5559;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* =========================================================
+           A4 LANDSCAPE CERTIFICATE
+           297mm × 210mm
+        ========================================================= */
+        .certificate {
+            position: relative;
+            width: 297mm;
+            height: 210mm;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 8mm;
+            overflow: hidden;
+            background:
+                radial-gradient(
+                    circle at 50% 45%,
+                    rgba(184, 154, 69, 0.035),
+                    transparent 42%
+                ),
+                #f9f6eb;
+            color: #123f43;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.14);
+        }
+
+        /* Outer gold border */
+        .outer-border {
+            position: absolute;
+            inset: 5mm;
+            border: 0.45mm solid #aa9146;
+            pointer-events: none;
+        }
+
+        /* Inner teal border */
+        .inner-border {
+            position: absolute;
+            inset: 7.2mm;
+            border: 0.65mm solid #123f43;
+            pointer-events: none;
+        }
+
+        /* Decorative inner gold line */
+        .inner-border::after {
+            content: "";
+            position: absolute;
+            inset: 1.5mm;
+            border: 0.18mm solid rgba(170, 145, 70, 0.75);
+        }
+
+        .certificate-content {
+            position: relative;
+            z-index: 2;
+            height: 100%;
+            padding: 3mm 10mm 5mm;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* =========================================================
+           UNIVERSITY HEADER
+        ========================================================= */
+        .university-header {
+            height: 29mm;
+            display: grid;
+            grid-template-columns: 47% 23% 30%;
+            align-items: center;
+            border-bottom: 0.25mm solid rgba(18, 63, 67, 0.35);
+            padding: 1mm 2mm 2.5mm;
+        }
+
+        .university-brand {
+            display: flex;
+            align-items: center;
+            gap: 4mm;
+            min-width: 0;
+        }
+
+        .logo {
+            width: 18mm;
+            height: 18mm;
+            object-fit: contain;
+            flex: 0 0 auto;
+        }
+
+        .brand-text {
+            line-height: 0.94;
+        }
+
+        .brand-main {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 17pt;
+            font-weight: 800;
+            letter-spacing: 1.4px;
+            color: #123f43;
+        }
+
+        .brand-sub {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 15pt;
+            font-weight: 800;
+            letter-spacing: 1.2px;
+            color: #123f43;
+        }
+
+        .naac {
+            height: 18mm;
+            padding-left: 5mm;
+            border-left: 0.25mm solid rgba(18, 63, 67, 0.28);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            color: #344e50;
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.3;
+        }
+
+        .naac-small {
+            font-size: 8.5pt;
+            letter-spacing: 0.2px;
+        }
+
+        .naac-grade {
+            margin-top: 1mm;
+            color: #a34c45;
+            font-size: 12pt;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .school {
+            height: 18mm;
+            padding-left: 5mm;
+            border-left: 0.25mm solid rgba(18, 63, 67, 0.28);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #123f43;
+            line-height: 1.25;
+        }
+
+        .school-title {
+            font-size: 9pt;
+            font-weight: 700;
+            letter-spacing: 0.45px;
+        }
+
+        .school-program {
+            margin-top: 1mm;
+            font-size: 8pt;
+            color: #a34c45;
+            font-weight: 700;
+        }
+
+        /* =========================================================
+           ENGINEERS DAY
+        ========================================================= */
+        .engineers-day {
+            height: 17mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7mm;
+            flex-shrink: 0;
+        }
+
+        .day-line {
+            width: 39mm;
+            height: 0.25mm;
+            background: #aa9146;
+        }
+
+        .day-label {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 13pt;
+            font-weight: 700;
+            letter-spacing: 3.5px;
+            color: #123f43;
+            white-space: nowrap;
+        }
+
+        /* =========================================================
+           CERTIFICATE TITLE
+        ========================================================= */
+        .certificate-title {
+            margin: 0;
+            text-align: center;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 26pt;
+            font-weight: 600;
+            letter-spacing: 2.2px;
+            color: #123f43;
+            line-height: 1.05;
+            flex-shrink: 0;
+        }
+
+        .title-rule {
+            width: 58mm;
+            height: 0.3mm;
+            margin: 2.2mm auto 2.2mm;
+            background: #aa9146;
+        }
+
+        /* =========================================================
+           EVENT
+        ========================================================= */
+        .event-name {
+            margin: 0;
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 13pt;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #a34c45;
+            line-height: 1.15;
+            flex-shrink: 0;
+        }
+
+        .event-description {
+            max-width: 195mm;
+            margin: 2.2mm auto 0;
+            text-align: center;
+            font-size: 9.2pt;
+            line-height: 1.35;
+            color: #496263;
+            font-style: italic;
+            flex-shrink: 0;
+        }
+
+        /* =========================================================
+           PRESENTATION / NAME
+        ========================================================= */
+        .presentation {
+            margin-top: 5mm;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .presented-text {
+            font-size: 10pt;
+            color: #526668;
+            letter-spacing: 0.35px;
+            margin-bottom: 2.2mm;
+        }
+
+        .participant-name {
+            display: inline-block;
+            min-width: 85mm;
+            max-width: 215mm;
+            padding: 0 8mm 1.7mm;
+            border-bottom: 0.35mm solid #aa9146;
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 24pt;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #123f43;
+            line-height: 1.1;
+            overflow-wrap: anywhere;
+        }
+
+        .description {
+            max-width: 216mm;
+            margin: 4mm auto 0;
+            text-align: center;
+            font-size: 10pt;
+            line-height: 1.45;
+            color: #294b4d;
+        }
+
+        /* =========================================================
+           EVENT DETAILS
+        ========================================================= */
+        .details {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 4mm;
+            min-height: 8mm;
+            flex-shrink: 0;
+        }
+
+        .detail-date {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8.8pt;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #526668;
+        }
+
+        .detail-date span {
+            color: #123f43;
+        }
+
+        /* =========================================================
+           SMALL EVENT NOTE
+        ========================================================= */
+        .event-note {
+            max-width: 190mm;
+            margin: 2.2mm auto 0;
+            text-align: center;
+            font-size: 7.7pt;
+            line-height: 1.35;
+            color: #667777;
+            font-style: italic;
+            flex-shrink: 0;
+        }
+
+        /* =========================================================
+           SIGNATURES
+        ========================================================= */
+        .signatures {
+            margin-top: auto;
+            padding: 4mm 15mm 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 45mm;
+            flex-shrink: 0;
+        }
+
+        .signature {
+            text-align: center;
+        }
+
+        .signature-space {
+            height: 12mm;
+        }
+
+        .signature-line {
+            width: 50mm;
+            height: 0.25mm;
+            margin: 0 auto 2mm;
+            background: #123f43;
+        }
+
+        .signature-name {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 10pt;
+            font-weight: 700;
+            color: #123f43;
+        }
+
+        .signature-role {
+            margin-top: 0.7mm;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 8pt;
+            color: #687778;
+            letter-spacing: 0.4px;
+        }
+
+        /* =========================================================
+           FOOTER
+        ========================================================= */
+        .footer {
+            margin-top: 3mm;
+            padding-top: 2mm;
+            border-top: 0.22mm solid rgba(18, 63, 67, 0.3);
+            text-align: center;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 7.2pt;
+            letter-spacing: 0.55px;
+            color: #617071;
+            flex-shrink: 0;
+        }
+
+        /* =========================================================
+           RESPONSIVE SCREEN PREVIEW
+        ========================================================= */
+        @media screen and (max-width: 1100px) {
+            body {
+                padding: 12px;
+            }
+
+            .controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .print-button {
+                width: 100%;
+            }
+
+            .certificate {
+                width: 100%;
+                height: auto;
+                aspect-ratio: 297 / 210;
+            }
+
+            .university-header {
+                grid-template-columns: 45% 22% 33%;
+            }
+
+            .brand-main {
+                font-size: 12pt;
+            }
+
+            .brand-sub {
+                font-size: 11pt;
+            }
+
+            .school-title {
+                font-size: 7pt;
+            }
+
+            .school-program {
+                font-size: 6.5pt;
+            }
+
+            .certificate-title {
+                font-size: 19pt;
+            }
+
+            .participant-name {
+                font-size: 18pt;
+            }
+
+            .description {
+                font-size: 8pt;
+            }
+        }
+
+        /* =========================================================
+           PRINT
+        ========================================================= */
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        @media print {
+            html,
+            body {
+                width: 297mm;
+                height: 210mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #f9f6eb !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .control-panel {
+                display: none !important;
+            }
+
+            .certificate {
+                display: block !important;
+                width: 297mm !important;
+                height: 210mm !important;
+                max-width: none !important;
+                margin: 0 !important;
+                padding: 8mm !important;
+                box-shadow: none !important;
+                page-break-after: avoid !important;
+                page-break-before: avoid !important;
+                break-after: avoid !important;
+                break-before: avoid !important;
+                overflow: hidden !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- =========================================================
+         CONTROL PANEL
+    ========================================================== -->
+    <section class="control-panel">
+        <h2 class="control-heading">Engineers Day 2026 — Certificate Generator</h2>
+
+        <div class="controls">
+
+            <div class="field">
+                <label for="eventSelect">Event</label>
+                <select id="eventSelect">
+                    <option value="debate">The Mind Behind the Machine</option>
+                    <option value="poster">The World We Could Build</option>
+                    <option value="engineer">Engineer It!</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="certificateSelect">Certificate</label>
+                <select id="certificateSelect">
+                    <option value="winner">Winner</option>
+                    <option value="runner">Runner-up</option>
+                    <option value="participation">Participation</option>
+                </select>
+            </div>
+
+            <div class="field hidden" id="awardField">
+                <label for="awardSelect">Award</label>
+                <select id="awardSelect">
+                    <option value="Most Creative">Most Creative</option>
+                    <option value="Most Practical">Most Practical</option>
+                    <option value="Most “Why Didn't We Think of This?”">
+                        Most “Why Didn't We Think of This?”
+                    </option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label for="nameInput">Name / Team</label>
+                <input
+                    type="text"
+                    id="nameInput"
+                    placeholder="Participant / Team Name"
+                    autocomplete="off"
+                >
+            </div>
+
+            <button class="print-button" id="printButton">
+                PRINT CERTIFICATE
+            </button>
+
+        </div>
+    </section>
+
+
+    <!-- =========================================================
+         CERTIFICATE
+    ========================================================== -->
+    <main class="certificate" id="certificate">
+
+        <div class="outer-border"></div>
+        <div class="inner-border"></div>
+
+        <div class="certificate-content">
+
+            <!-- UNIVERSITY HEADER -->
+            <header class="university-header">
+
+                <div class="university-brand">
+                    <img
+                        src="nuv-logo.png"
+                        alt="Navrachana University Logo"
+                        class="logo"
+                    >
+
+                    <div class="brand-text">
+                        <div class="brand-main">NAVRACHANA</div>
+                        <div class="brand-sub">UNIVERSITY</div>
+                    </div>
+                </div>
+
+                <div class="naac">
+                    <div class="naac-small">Accredited with</div>
+                    <div class="naac-grade">‘Grade ‘A’ by NAAC</div>
+                </div>
+
+                <div class="school">
+                    <div class="school-title">
+                        School of<br>
+                        Engineering and Technology
+                    </div>
+
+                    <div class="school-program">
+                        Computer Science and<br>
+                        Engineering Program
+                    </div>
+                </div>
+
+            </header>
+
+
+            <!-- ENGINEERS DAY -->
+            <section class="engineers-day">
+                <div class="day-line"></div>
+                <div class="day-label">ENGINEERS DAY</div>
+                <div class="day-line"></div>
+            </section>
+
+
+            <!-- CERTIFICATE TITLE -->
+            <h1 class="certificate-title" id="certificateTitle">
+                CERTIFICATE OF ACHIEVEMENT
+            </h1>
+
+            <div class="title-rule"></div>
+
+
+            <!-- EVENT -->
+            <h2 class="event-name" id="eventName">
+                THE MIND BEHIND THE MACHINE
+            </h2>
+
+            <p class="event-description" id="eventDescription">
+                A debate exploring technology, critical thought and the
+                evolving relationship between humans and machines.
+            </p>
+
+
+            <!-- PRESENTATION -->
+            <section class="presentation">
+
+                <div class="presented-text">
+                    This certificate is proudly presented to
+                </div>
+
+                <div class="participant-name" id="participantName">
+                    PARTICIPANT / TEAM NAME
+                </div>
+
+                <p class="description" id="certificateDescription">
+                    for securing WINNER in “The Mind Behind the Machine”,
+                    conducted as part of Engineers Day 2026, in recognition
+                    of outstanding debating, critical thinking, articulation
+                    and intellectual engagement.
+                </p>
+
+            </section>
+
+
+            <!-- DATE -->
+            <div class="details">
+                <div class="detail-date">
+                    Date: <span>16 September 2026</span>
+                </div>
+            </div>
+
+
+            <!-- EVENT-SPECIFIC SMALL NOTE -->
+            <div class="event-note" id="eventNote">
+                “Are we designing technology or is technology designing us?”
+                &nbsp;&nbsp; • &nbsp;&nbsp;
+                “We built machines to think like us and now we are learning
+                to think like them.”
+            </div>
+
+
+            <!-- SIGNATURES -->
+            <section class="signatures">
+
+                <div class="signature">
+                    <div class="signature-space"></div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name">Swapnilla Nigam</div>
+                    <div class="signature-role">Convenor</div>
+                </div>
+
+                <div class="signature">
+                    <div class="signature-space"></div>
+                    <div class="signature-line"></div>
+                    <div class="signature-name">Dr. Dhaval Mehta</div>
+                    <div class="signature-role">Program Head</div>
+                </div>
+
+            </section>
+
+
+            <!-- FOOTER -->
+            <footer class="footer">
+                School of Engineering and Technology
+                &nbsp; • &nbsp;
+                Computer Science and Engineering Program
+            </footer>
+
+        </div>
+    </main>
+
+
+    <script>
+        /* =========================================================
+           EVENT DATA
+        ========================================================== */
+
+        const eventData = {
+
+            debate: {
+                name: "THE MIND BEHIND THE MACHINE",
+
+                description:
+                    "A debate exploring technology, critical thought and the evolving relationship between humans and machines.",
+
+                note:
+                    "“Are we designing technology or is technology designing us?”" +
+                    " &nbsp;&nbsp; • &nbsp;&nbsp; " +
+                    "“We built machines to think like us and now we are learning to think like them.”",
+
+                winner:
+                    "for securing WINNER in “The Mind Behind the Machine”, conducted as part of Engineers Day 2026, in recognition of outstanding debating, critical thinking, articulation and intellectual engagement.",
+
+                runner:
+                    "for securing RUNNER-UP in “The Mind Behind the Machine”, conducted as part of Engineers Day 2026, in recognition of outstanding debating, critical thinking, articulation and intellectual engagement.",
+
+                participation:
+                    "for actively participating in “The Mind Behind the Machine”, conducted as part of Engineers Day 2026, and for demonstrating enthusiasm, critical thinking, creativity and a spirit of intellectual exploration."
+            },
+
+            poster: {
+                name: "THE WORLD WE COULD BUILD",
+
+                description:
+                    "Where engineering meets code, creativity and possibility.",
+
+                note:
+                    "Accepted formats: Digital print or paperback copies.",
+
+                winner:
+                    "for securing WINNER in “The World We Could Build”, conducted as part of Engineers Day 2026, in recognition of creative expression, innovative thinking and the ability to present ideas with impact.",
+
+                runner:
+                    "for securing RUNNER-UP in “The World We Could Build”, conducted as part of Engineers Day 2026, in recognition of creative expression, innovative thinking and the ability to present ideas with impact.",
+
+                participation:
+                    "for actively participating in “The World We Could Build”, conducted as part of Engineers Day 2026, and for demonstrating creativity, imagination and an inspiring vision of what engineering can make possible."
+            },
+
+            engineer: {
+                name: "ENGINEER IT!",
+
+                description:
+                    "A first-year innovation challenge focused on creative thinking, practical solutions and problem-solving.",
+
+                note:
+                    "First Year Innovation Event",
+
+                winner: "",
+
+                runner: "",
+
+                participation:
+                    "for actively participating in “Engineer It!”, conducted as part of Engineers Day 2026, and for demonstrating creativity, teamwork, innovation and a spirit of problem-solving."
+            }
+        };
+
+
+        /* =========================================================
+           DOM ELEMENTS
+        ========================================================== */
+
+        const eventSelect = document.getElementById("eventSelect");
+        const certificateSelect = document.getElementById("certificateSelect");
+        const awardField = document.getElementById("awardField");
+        const awardSelect = document.getElementById("awardSelect");
+        const nameInput = document.getElementById("nameInput");
+        const printButton = document.getElementById("printButton");
+
+        const certificateTitle =
+            document.getElementById("certificateTitle");
+
+        const eventName =
+            document.getElementById("eventName");
+
+        const eventDescription =
+            document.getElementById("eventDescription");
+
+        const participantName =
+            document.getElementById("participantName");
+
+        const certificateDescription =
+            document.getElementById("certificateDescription");
+
+        const eventNote =
+            document.getElementById("eventNote");
+
+
+        /* =========================================================
+           UPDATE AWARD VISIBILITY
+        ========================================================== */
+
+        function updateAwardVisibility() {
+
+            const event = eventSelect.value;
+            const certificate = certificateSelect.value;
+
+            const shouldShowAward =
+                event === "engineer" &&
+                (certificate === "winner" || certificate === "runner");
+
+            if (shouldShowAward) {
+                awardField.classList.remove("hidden");
+            } else {
+                awardField.classList.add("hidden");
+            }
+        }
+
+
+        /* =========================================================
+           BUILD ENGINEER IT! WORDING
+        ========================================================== */
+
+        function getEngineerWording(certificateType) {
+
+            const award = awardSelect.value;
+
+            if (certificateType === "winner") {
+                return (
+                    "for receiving the award " +
+                    award +
+                    " in “Engineer It!”, conducted as part of Engineers Day 2026, " +
+                    "in recognition of creativity, practical thinking, innovation " +
+                    "and effective problem-solving."
+                );
+            }
+
+            if (certificateType === "runner") {
+                return (
+                    "for receiving the award " +
+                    award +
+                    " in “Engineer It!”, conducted as part of Engineers Day 2026, " +
+                    "in recognition of creativity, practical thinking, innovation " +
+                    "and effective problem-solving."
+                );
+            }
+
+            return eventData.engineer.participation;
+        }
+
+
+        /* =========================================================
+           UPDATE CERTIFICATE
+        ========================================================== */
+
+        function updateCertificate() {
+
+            const selectedEvent = eventSelect.value;
+            const selectedCertificate = certificateSelect.value;
+
+            const data = eventData[selectedEvent];
+
+            /* Certificate title */
+            if (selectedCertificate === "participation") {
+                certificateTitle.textContent =
+                    "CERTIFICATE OF PARTICIPATION";
+            } else {
+                certificateTitle.textContent =
+                    "CERTIFICATE OF ACHIEVEMENT";
+            }
+
+
+            /* Event name */
+            eventName.textContent = data.name;
+
+
+            /* Event description */
+            eventDescription.textContent = data.description;
+
+
+            /* Participant / team name */
+            const enteredName = nameInput.value.trim();
+
+            participantName.textContent =
+                enteredName || "PARTICIPANT / TEAM NAME";
+
+
+            /* Certificate wording */
+            let wording = "";
+
+            if (selectedEvent === "engineer") {
+                wording = getEngineerWording(selectedCertificate);
+            } else {
+                wording = data[selectedCertificate];
+            }
+
+            certificateDescription.textContent = wording;
+
+
+            /* Event note */
+            eventNote.innerHTML = data.note;
+
+
+            /* Award visibility */
+            updateAwardVisibility();
+        }
+
+
+        /* =========================================================
+           EVENT LISTENERS
+        ========================================================== */
+
+        eventSelect.addEventListener("change", updateCertificate);
+
+        certificateSelect.addEventListener("change", updateCertificate);
+
+        awardSelect.addEventListener("change", updateCertificate);
+
+        nameInput.addEventListener("input", updateCertificate);
+
+
+        /* =========================================================
+           PRINT
+        ========================================================== */
+
+        printButton.addEventListener("click", function () {
+            updateCertificate();
+            window.print();
+        });
+
+
+        /* =========================================================
+           INITIAL STATE
+        ========================================================== */
+
+        updateCertificate();
+
+    </script>
+
+</body>
+</html>
